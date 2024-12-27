@@ -1,16 +1,4 @@
 #[derive(Debug, PartialEq, Clone)]
-pub enum PrimitiveFnc {
-    Sum,
-    Mul,
-    And,
-    Or,
-    Xor,
-    Not,
-    LogAnd,
-    LogOr,
-}
-
-#[derive(Debug, PartialEq, Clone)]
 pub enum Keyword {
     If,
     Else,
@@ -20,29 +8,19 @@ pub enum Keyword {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum Body {
-    Open,
-    Close,
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub enum Bracket {
-    LeftBracket,
-    RightBracket,
-}
-
-#[derive(Debug, PartialEq, Clone)]
 pub enum Token {
     Number(i64),
 
     Assign,
     Declaration,
 
-    Variable(String),
+    Name(String),
 
-    PrimFuncs(PrimitiveFnc),
-    Brackets(Bracket),
-    Bodys(Body),
+    At, Lattice,
+    Plus, Minus, Star, Slash, Percent,
+    Backslash,
+    Ampersand, Caret, Vline, Epoint, LogAnd, LogOr, Equ, Nequ,
+    OpenParen, CloseParen, OpenBracket, CloseBracket, OpenCurly, CloseCurly, OpenArrow, CloseArrow,
     Keywords(Keyword),
 
     Dot,
@@ -52,168 +30,120 @@ pub enum Token {
 }
 
 struct Context {
-    startoftoken: usize,
     index: usize,
     tokens: Vec<Token>,
     str2tok: HashMap<String, Token>,
 }
 
-impl Context {
-    pub fn parse(&mut self, string: &String, newsubstr: &String) {
-        if self.startoftoken != self.index { //ya ne dolbaeb (mb), tam nizhe block dolzhen vipolnit`sya
-            let strofoldtoken: String = string[self.startoftoken..self.index].to_string();
-
-            if strofoldtoken
-                .chars()
-                .nth(0)
-                .unwrap()
-                .is_ascii_alphabetic() {
-                self.tokens.push(Token::Variable(strofoldtoken
-                    .as_str()
-                    .trim()
-                    .to_string()
-                ));
-            } else {
-                self.tokens.push(Token::Number(strofoldtoken
-                    .parse::<i64>()
-                    .unwrap()
-                ));
-            }
-        }
-        self.index += newsubstr.len() - 1;
-        self.startoftoken = self.index + 1;
-    }
-
-    pub fn parsepush(&mut self, string: &String, newsubstr: &str) {
-        self.parse(string, &newsubstr.to_string());
-        self.tokens.push(self.str2tok.get(newsubstr).unwrap().clone());
-    }
-}
 
 use std::collections::HashMap;
 
 fn init() -> HashMap<String, Token> {
-    let mut map = HashMap::new();
+    let mut map = HashMap::from([
+        (String::from(":="), Token::Declaration),
+        (String::from("="), Token::Assign),
 
-    map.insert(String::from(":="), Token::Declaration);
-    map.insert(String::from("="), Token::Assign);
+        (String::from("if"), Token::Keywords(Keyword::If)),
+        (String::from("else"), Token::Keywords(Keyword::Else)),
+        (String::from("ret"), Token::Keywords(Keyword::Ret)),
+        (String::from("for"), Token::Keywords(Keyword::For)),
+        (String::from("fnc"), Token::Keywords(Keyword::Fnc)),
 
-    map.insert(String::from("if"), Token::Keywords(Keyword::If));
-    map.insert(String::from("else"), Token::Keywords(Keyword::Else));
-    map.insert(String::from("ret"), Token::Keywords(Keyword::Ret));
-    map.insert(String::from("for"), Token::Keywords(Keyword::For));
-    map.insert(String::from("fnc"), Token::Keywords(Keyword::Fnc));
+        (String::from("+"), Token::Plus),
+        (String::from("-"), Token::Minus),
+        (String::from("*"), Token::Star),
+        (String::from("/"), Token::Slash),
 
-    map.insert(String::from("+"), Token::PrimFuncs(PrimitiveFnc::Sum));
-    map.insert(String::from("*"), Token::PrimFuncs(PrimitiveFnc::Mul));
-    map.insert(String::from("&"), Token::PrimFuncs(PrimitiveFnc::And));
-    map.insert(String::from("|"), Token::PrimFuncs(PrimitiveFnc::Or));
-    map.insert(String::from("^"), Token::PrimFuncs(PrimitiveFnc::Xor));
-    map.insert(String::from("!"), Token::PrimFuncs(PrimitiveFnc::Not));
-    map.insert(String::from("&&"), Token::PrimFuncs(PrimitiveFnc::LogAnd));
-    map.insert(String::from("||"), Token::PrimFuncs(PrimitiveFnc::LogOr));
+        (String::from("&"), Token::Ampersand),
+        (String::from("|"), Token::Vline),
+        (String::from("^"), Token::Caret),
+        (String::from("!"), Token::Epoint),
+        (String::from("&&"), Token::LogAnd),
+        (String::from("||"), Token::LogOr),
+        (String::from("=="), Token::Equ),
+        (String::from("!="), Token::Nequ),
 
-    map.insert(String::from("("), Token::Brackets(Bracket::LeftBracket));
-    map.insert(String::from(")"), Token::Brackets(Bracket::RightBracket));
+        (String::from("("), Token::OpenParen),
+        (String::from(")"), Token::CloseParen),
+        (String::from("{"), Token::OpenCurly),
+        (String::from("}"), Token::CloseCurly),
+        (String::from("["), Token::OpenBracket),
+        (String::from("]"), Token::CloseBracket),
+        (String::from("<"), Token::OpenArrow),
+        (String::from(">"), Token::CloseArrow),
 
-    map.insert(String::from("{"), Token::Bodys(Body::Open));
-    map.insert(String::from("}"), Token::Bodys(Body::Close));
-
-    map.insert(String::from("."), Token::Dot);
-    map.insert(String::from(","), Token::Comma);
-    map.insert(String::from(";"), Token::End);
+        (String::from("."), Token::Dot),
+        (String::from(","), Token::Comma),
+        (String::from(";"), Token::End),
+    ]);
 
     map
+}
+
+fn is_alph(c: char) -> bool {
+    c.is_alphabetic() || c == ' ' || c.is_digit(10)
+}
+
+fn split(string: &String) -> Vec<String> {
+    let mut strs: Vec<String> = vec![];
+    if string.is_empty() {
+        return strs;
+    }
+    let mut p1 = 0;
+    let mut p2 = 0;
+
+    for (i, c) in string.chars().enumerate() {
+       if is_alph(c) {
+           p1 = i;
+           strs.push(string[0..p1].trim().to_string());
+           break;
+       }
+    }
+    for (i, c) in string[p1..].chars().enumerate() {
+        if !is_alph(c) {
+            p2 = i + p1;
+            strs.push(string[p1..p2].to_string());
+            break;
+        }
+    }
+    strs.extend(split(&string[p2..].to_string()));
+    strs
 }
 
 pub fn lex(string: String) -> Vec<Token> {
 
     let mut cntxt = Context {
-        startoftoken: 0,
         index: 0,
         tokens: Vec::new(),
         str2tok: init(),
     };
 
-    while cntxt.index < string.len() {
+    let morfems = split(&string);
+    let separators = vec![":=", "-", "*", "/", "%", "==", "=", "!=", "<", ">", "&&", "||", "!", "~", "&", "|", "^"];
 
-        let c = string.chars().nth(cntxt.index).unwrap();
-        match c {
-            ' ' => {
-                cntxt.parse(&string, &" ".to_string());
-            }
-            _ => match string[cntxt.index..].to_string() {
-                s if s.starts_with(";") => {
-                    cntxt.parsepush(&string, ";");
+    for morfem in morfems {
+        if is_alph(morfem[0]) {
+            cntxt.tokens.push(
+                match cntxt.str2tok.get(&morfem) {
+                    Some(token) => token.clone(),
+                    None => match morfem.parse::<i64>() {
+                        Ok(number) => Token::Number(number),
+                        Err(_) => Token::Name(morfem),
+                    }
                 }
-                s if s.starts_with(":=") => {
-                    cntxt.parsepush(&string, ":=");
+            );
+        } else {
+            while cntxt.index < morfem.len() {
+                for separator in separators.clone() {
+                    if morfem[cntxt.index..].starts_with(separator) {
+                        cntxt.tokens.push(cntxt.str2tok.get(&morfem[cntxt.index..]).unwrap().clone());
+                        cntxt.index += separator.len() - 1;
+                        break;
+                    }
                 }
-                s if s.starts_with("=") => {
-                    cntxt.parsepush(&string, "=");
-                }
-                s if s.starts_with("+") => {
-                    cntxt.parsepush(&string, "+");
-                }
-                s if s.starts_with("*") => {
-                    cntxt.parsepush(&string, "*");
-                }
-                s if s.starts_with("&") => {
-                    cntxt.parsepush(&string, "&");
-                }
-                s if s.starts_with("|") => {
-                    cntxt.parsepush(&string, "|");
-                }
-                s if s.starts_with("^") => {
-                    cntxt.parsepush(&string, "^");
-                }
-                s if s.starts_with("!") => {
-                    cntxt.parsepush(&string, "!");
-                }
-                s if s.starts_with("&&") => {
-                    cntxt.parsepush(&string, "&&");
-                }
-                s if s.starts_with("||") => {
-                    cntxt.parsepush(&string, "||");
-                }
-                s if s.starts_with("if") => {
-                    cntxt.parsepush(&string, "if");
-                }
-                s if s.starts_with("else") => {
-                    cntxt.parsepush(&string, "else");
-                }
-                s if s.starts_with("for") => {
-                    cntxt.parsepush(&string, "for");
-                }
-                s if s.starts_with("fnc") => {
-                    cntxt.parsepush(&string, "fnc");
-                }
-                s if s.starts_with("ret") => {
-                    cntxt.parsepush(&string, "ret");
-                }
-                s if s.starts_with("{") => {
-                    cntxt.parsepush(&string, "{");
-                }
-                s if s.starts_with("}") => {
-                    cntxt.parsepush(&string, "}");
-                }
-                s if s.starts_with("(") => {
-                    cntxt.parsepush(&string, "(");
-                }
-                s if s.starts_with(")") => {
-                    cntxt.parsepush(&string, ")");
-                }
-                s if s.starts_with(".") => {
-                    cntxt.parsepush(&string, ".");
-                }
-                s if s.starts_with(",") => {
-                    cntxt.parsepush(&string, ",");
-                }
-
-                _ => {}
+                cntxt.index += 1;
             }
         }
-        cntxt.index += 1;
     }
     cntxt.tokens
 }
