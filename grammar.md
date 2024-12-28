@@ -10,7 +10,7 @@
 
 `Expr -> FuncName(OptFuncArgs)
        | Expr InfixFunc Expr 
-       | (Expr) | (Expr, Expr) 
+       | (Expr) 
        | Var 
        | Number`
 
