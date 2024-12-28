@@ -1,4 +1,7 @@
 mod lexer;
-mod parser;
+mod startup;
 
-fn main() {}
+fn main() {
+    let code = startup::get_code();
+    println!("{}", code);
+}
