@@ -1,113 +1,330 @@
-#[derive(Debug, PartialEq)]
-pub enum Token {
-    Number(i64),
-
-    Sum,
-    Plus,
-    Mul,
-    And,
-    Or,
-    Xor,
-    Not,
-    LogAnd,
-    LogOr,
-
-    Assign,
-    Declaration,
-
-    Variable(String),
-    Function(String),
-
-    LeftBracket,
-    RightBracket,
-
-    Dot,
-    Comma,
-
+#[derive(Debug, PartialEq, Clone)]
+pub enum Keyword {
     If,
     Else,
     For,
     Fnc,
     Ret,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum Token {
+    Number(i64),
+
+    Assign,
+    Declaration,
+
+    Name(String),
+
+    At,
+    Lattice,
+    Plus,
+    Minus,
+    Star,
+    Slash,
+    Percent,
+    Backslash,
+    Ampersand,
+    Caret,
+    Vline,
+    Epoint,
+    LogAnd,
+    LogOr,
+    Equ,
+    Nequ,
+    OpenParen,
+    CloseParen,
+    OpenBracket,
+    CloseBracket,
+    OpenCurly,
+    CloseCurly,
+    OpenArrow,
+    CloseArrow,
+    Keywords(Keyword),
+
+    Dot,
+    Comma,
 
     End,
 }
 
 struct Context {
-    startoftoken: usize,
-    canbenumber: bool,
-    canbevar: bool,
     index: usize,
     tokens: Vec<Token>,
+    str2tok: HashMap<String, Token>,
 }
 
-impl Context {
-    pub fn parse(&mut self, string: &str, newsubstr: &str) {
-        let strofoldtoken: String = string[self.startoftoken..self.index].to_string();
-        if self.canbenumber {
-            self.tokens
-                .push(Token::Number(strofoldtoken.parse::<i64>().unwrap()));
-        } else if self.canbevar {
-            self.tokens.push(Token::Variable(strofoldtoken));
-        } else {
-            self.tokens.push(Token::Function(strofoldtoken));
-        }
-        self.index += newsubstr.len() - 1;
-        self.canbenumber = true;
-        self.canbevar = false;
-        self.startoftoken = self.index + 1;
+use std::collections::HashMap;
+
+fn init() -> HashMap<String, Token> {
+    let map = HashMap::from([
+        (String::from(":="), Token::Declaration),
+        (String::from("="), Token::Assign),
+        (String::from("if"), Token::Keywords(Keyword::If)),
+        (String::from("else"), Token::Keywords(Keyword::Else)),
+        (String::from("ret"), Token::Keywords(Keyword::Ret)),
+        (String::from("for"), Token::Keywords(Keyword::For)),
+        (String::from("fnc"), Token::Keywords(Keyword::Fnc)),
+        (String::from("+"), Token::Plus),
+        (String::from("-"), Token::Minus),
+        (String::from("*"), Token::Star),
+        (String::from("/"), Token::Slash),
+        (String::from("%"), Token::Percent),
+        (String::from("\\"), Token::Backslash),
+        (String::from("&"), Token::Ampersand),
+        (String::from("|"), Token::Vline),
+        (String::from("^"), Token::Caret),
+        (String::from("!"), Token::Epoint),
+        (String::from("#"), Token::Lattice),
+        (String::from("@"), Token::At),
+        (String::from("&&"), Token::LogAnd),
+        (String::from("||"), Token::LogOr),
+        (String::from("=="), Token::Equ),
+        (String::from("!="), Token::Nequ),
+        (String::from("("), Token::OpenParen),
+        (String::from(")"), Token::CloseParen),
+        (String::from("{"), Token::OpenCurly),
+        (String::from("}"), Token::CloseCurly),
+        (String::from("["), Token::OpenBracket),
+        (String::from("]"), Token::CloseBracket),
+        (String::from("<"), Token::OpenArrow),
+        (String::from(">"), Token::CloseArrow),
+        (String::from("."), Token::Dot),
+        (String::from(","), Token::Comma),
+        (String::from(";"), Token::End),
+    ]);
+
+    map
+}
+
+fn is_alph(c: char) -> bool {
+    c.is_alphabetic() || c == '_' || c.is_digit(10)
+}
+
+fn split(string: &String) -> Vec<String> {
+    let mut strs: Vec<String> = vec![];
+
+    if string.is_empty() {
+        return strs;
     }
-}
-const IF: &str = "if";
-const DECL: &str = ":=";
-const ASSIGN: &str = "=";
-const END: &str = ";";
 
-//qwe123:=45;
-//0123456789
-pub fn lex(str: &str) -> Vec<Token> {
+    let mut p1 = 0;
+    let mut p2 = 0;
+
+    for (i, c) in string.chars().enumerate() {
+        if is_alph(c) {
+            p1 = i;
+            if p1 > 0 {
+                let trimed = string[0..p1].trim();
+                if !trimed.is_empty() {
+                    strs.push(trimed.to_string());
+                }
+            }
+            break;
+        }
+    }
+
+    if p1 == 0 && !is_alph(string.chars().next().unwrap()) {
+        strs.push(string.clone().trim().to_string());
+        return strs;
+    }
+
+    for (i, c) in string[p1..].chars().enumerate() {
+        if !is_alph(c) {
+            p2 = i + p1;
+            strs.push(string[p1..p2].to_string());
+            break;
+        }
+    }
+
+    strs.extend(split(&string[p2..].to_string()));
+    strs
+}
+
+pub fn lex(string: String) -> Vec<Token> {
     let mut cntxt = Context {
-        startoftoken: 0,
-        canbevar: false,
-        canbenumber: true,
         index: 0,
         tokens: Vec::new(),
+        str2tok: init(),
     };
 
-    while cntxt.index < str.len() {
-        let c = str.chars().nth(cntxt.index).unwrap();
-        match c {
-            _ if c.is_ascii_alphabetic() => {
-                cntxt.canbenumber = false;
-                cntxt.canbevar = true;
-            }
-            _ if c.is_ascii_digit() => {
+    let morfems = split(&string);
+    let separators = vec![
+        "(", ")", "{", "}", "[", "]",
+        ":=", "-", "+", "*", "/", "%", "==", "=", "!=", "<", ">", "&&", "||", "!", "~", "&", "|", "^", ";",
+    ];
+
+    for morfem in morfems {
+        if is_alph(morfem.chars().next().unwrap()) {
+            cntxt.tokens.push(match cntxt.str2tok.get(&morfem) {
+                Some(token) => token.clone(),
+                None => match morfem.parse::<i64>() {
+                    Ok(number) => Token::Number(number),
+                    Err(_) => Token::Name(morfem),
+                },
+            });
+        } else {
+            while cntxt.index < morfem.len() {
+                for separator in separators.clone() {
+                    if morfem[cntxt.index..].starts_with(separator) {
+                        cntxt
+                            .tokens
+                            .push(cntxt.str2tok.get(separator).unwrap().clone());
+                        cntxt.index += separator.len() - 1;
+                        break;
+                    }
+                }
                 cntxt.index += 1;
-                continue;
             }
-            ' ' => {
-                cntxt.canbenumber = false;
-                cntxt.canbevar = false;
-            }
-            ';' => {
-                if cntxt.index != cntxt.startoftoken {
-                    cntxt.parse(str, END);
-                }
-                cntxt.tokens.push(Token::End)
-            }
-            _ => match str[cntxt.index..].to_string() {
-                s if s.starts_with(DECL) => {
-                    cntxt.parse(str, DECL);
-                    cntxt.tokens.push(Token::Declaration);
-                }
-                s if s.starts_with(ASSIGN) => {
-                    cntxt.parse(str, ASSIGN);
-                    cntxt.tokens.push(Token::Assign);
-                }
-                _ => {}
-            }
+            cntxt.index = 0;
         }
-        cntxt.index += 1;
     }
     cntxt.tokens
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    use crate::lexer::Keyword;
+    use crate::lexer::Token::*;
+
+    fn test(input: String, expected_tokens: Vec<Token>) {
+        let tokens = lex(input);
+        assert_eq!(
+            tokens.len(),
+            expected_tokens.len(),
+            "Token lengths don't match."
+        );
+        for (i, (token, expected_token)) in tokens.iter().zip(expected_tokens.iter()).enumerate() {
+            assert_eq!(token, expected_token, "Token mismatch at index {}", i);
+        }
+    }
+
+    #[test]
+    fn test_simple() {
+        let input = String::from("qwe123 := 42 ;");
+        let expected_tokens = vec![Name("qwe123".to_string()), Declaration, Number(42), End];
+        test(input, expected_tokens);
+    }
+
+    #[test]
+    fn test_funcs() {
+        let input = String::from(
+            "fnc foo() {\n\
+            a := 5;\n\
+            a2 := a * (42 + 13);\n\
+            ret a +a2;\n\
+        }\
+        \
+        fnc main() {\
+            x := 42;\
+            foo();\
+            ret 0;\
+        }",
+        );
+
+        let expected_tokens: Vec<Token> = vec![
+            Keywords(Keyword::Fnc), Name("foo".to_string()), OpenParen, CloseParen, OpenCurly,
+            Name("a".to_string()), Declaration, Number(5), End,
+            Name("a2".to_string()), Declaration, Name("a".to_string()), Star, OpenParen, Number(42), Plus, Number(13), CloseParen, End,
+            Keywords(Keyword::Ret), Name("a".to_string()), Plus, Name("a2".to_string()), End,
+            CloseCurly,
+            Keywords(Keyword::Fnc), Name("main".to_string()), OpenParen, CloseParen, OpenCurly,
+            Name("x".to_string()), Declaration, Number(42), End,
+            Name("foo".to_string()), OpenParen, CloseParen, End,
+            Keywords(Keyword::Ret), Number(0), End,
+            CloseCurly,
+        ];
+        test(input, expected_tokens);
+    }
+
+    #[test]
+    fn test_arithmetic_operations() {
+        let input = String::from("a := 5 * 3 + (2 - 1) / 2;");
+        let expected_tokens = vec![
+            Name("a".to_string()), Declaration, Number(5), Star, Number(3), Plus,
+            OpenParen, Number(2), Minus, Number(1), CloseParen, Slash, Number(2), End
+        ];
+        test(input, expected_tokens);
+    }
+
+    #[test]
+    fn test_variable_assignment() {
+        let input = String::from("var1if := 100; var2 := var1if + 50;");
+        let expected_tokens = vec![
+            Name("var1if".to_string()), Declaration, Number(100), End,
+            Name("var2".to_string()), Declaration, Name("var1if".to_string()), Plus, Number(50), End
+        ];
+        test(input, expected_tokens);
+    }
+
+    #[test]
+    fn test_conditional_statements() {
+        let input = String::from(
+            "if a > 0 {\
+                b := 1;\
+            } else {\
+                b := 2;\
+            }",
+        );
+        let expected_tokens = vec![
+            Keywords(Keyword::If), Name("a".to_string()), CloseArrow, Number(0), OpenCurly,
+            Name("b".to_string()), Declaration, Number(1), End,
+            CloseCurly, Keywords(Keyword::Else), OpenCurly,
+            Name("b".to_string()), Declaration, Number(2), End,
+            CloseCurly,
+        ];
+        test(input, expected_tokens);
+    }
+
+    #[test]
+    fn test_while_loop() {
+        let input = String::from(
+            "for forx < 10 {\
+                forx := forx + 1;\
+            }",
+        );
+        let expected_tokens = vec![
+            Keywords(Keyword::For), Name("forx".to_string()), OpenArrow, Number(10), OpenCurly,
+            Name("forx".to_string()), Declaration, Name("forx".to_string()), Plus, Number(1), End,
+            CloseCurly,
+        ];
+        test(input, expected_tokens);
+    }
+
+    #[test]
+    fn test_invalid_syntax() {
+        let input = String::from("a := 5 + +;\
+        b := &**a;");
+        let expected_tokens = vec![
+            Name("a".to_string()), Declaration, Number(5), Plus, Plus, End,
+            Name("b".to_string()), Declaration, Ampersand, Star, Star, Name("a".to_string()), End,
+        ];
+        test(input, expected_tokens); // Or throw an error depending on lexer implementation
+    }
+
+    #[test]
+    fn test_bad_names() {
+        let input = String::from(
+            "ifa := 5;\
+             fncfor := iret + 2223;",
+        );
+        let expected_tokens = vec![
+            Name("ifa".to_string()), Declaration, Number(5), End,
+            Name("fncfor".to_string()), Declaration, Name("iret".to_string()), Plus, Number(2223), End
+        ];
+        test(input, expected_tokens);
+    }
+
+    #[test]
+    fn test_multiple_statements() {
+        let input = String::from("a := 5; b := a + 3; c := b * 2;");
+        let expected_tokens = vec![
+            Name("a".to_string()), Declaration, Number(5), End,
+            Name("b".to_string()), Declaration, Name("a".to_string()), Plus, Number(3), End,
+            Name("c".to_string()), Declaration, Name("b".to_string()), Star, Number(2), End
+        ];
+        test(input, expected_tokens);
+    }
 }
