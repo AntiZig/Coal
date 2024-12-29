@@ -3,4 +3,12 @@ name = "Coal"
 version = "0.1.0"
 edition = "2021"
 
+[lints.rust]
+unused = "allow"
+dead_code = "allow"
+
+[lints.clippy]
+enum_glob_use = "deny"
+
 [dependencies]
+regex = "1.11.1"

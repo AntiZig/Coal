@@ -1,3 +1,5 @@
+use regex::{Regex, RegexSet};
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum Keyword {
     If,
@@ -54,7 +56,7 @@ struct Context {
     str2tok: HashMap<String, Token>,
 }
 
-use std::collections::HashMap;
+use std::{collections::HashMap, str::Chars};
 
 fn init() -> HashMap<String, Token> {
     let map = HashMap::from([
@@ -150,8 +152,8 @@ pub fn lex(string: String) -> Vec<Token> {
 
     let morfems = split(&string);
     let separators = vec![
-        "(", ")", "{", "}", "[", "]",
-        ":=", "-", "+", "*", "/", "%", "==", "=", "!=", "<", ">", "&&", "||", "!", "~", "&", "|", "^", ";",
+        "(", ")", "{", "}", "[", "]", ":=", "-", "+", "*", "/", "%", "==", "=", "!=", "<", ">",
+        "&&", "||", "!", "~", "&", "|", "^", ";",
     ];
 
     for morfem in morfems {
@@ -225,15 +227,47 @@ mod tests {
         );
 
         let expected_tokens: Vec<Token> = vec![
-            Keywords(Keyword::Fnc), Name("foo".to_string()), OpenParen, CloseParen, OpenCurly,
-            Name("a".to_string()), Declaration, Number(5), End,
-            Name("a2".to_string()), Declaration, Name("a".to_string()), Star, OpenParen, Number(42), Plus, Number(13), CloseParen, End,
-            Keywords(Keyword::Ret), Name("a".to_string()), Plus, Name("a2".to_string()), End,
+            Keywords(Keyword::Fnc),
+            Name("foo".to_string()),
+            OpenParen,
+            CloseParen,
+            OpenCurly,
+            Name("a".to_string()),
+            Declaration,
+            Number(5),
+            End,
+            Name("a2".to_string()),
+            Declaration,
+            Name("a".to_string()),
+            Star,
+            OpenParen,
+            Number(42),
+            Plus,
+            Number(13),
+            CloseParen,
+            End,
+            Keywords(Keyword::Ret),
+            Name("a".to_string()),
+            Plus,
+            Name("a2".to_string()),
+            End,
             CloseCurly,
-            Keywords(Keyword::Fnc), Name("main".to_string()), OpenParen, CloseParen, OpenCurly,
-            Name("x".to_string()), Declaration, Number(42), End,
-            Name("foo".to_string()), OpenParen, CloseParen, End,
-            Keywords(Keyword::Ret), Number(0), End,
+            Keywords(Keyword::Fnc),
+            Name("main".to_string()),
+            OpenParen,
+            CloseParen,
+            OpenCurly,
+            Name("x".to_string()),
+            Declaration,
+            Number(42),
+            End,
+            Name("foo".to_string()),
+            OpenParen,
+            CloseParen,
+            End,
+            Keywords(Keyword::Ret),
+            Number(0),
+            End,
             CloseCurly,
         ];
         test(input, expected_tokens);
@@ -243,8 +277,20 @@ mod tests {
     fn test_arithmetic_operations() {
         let input = String::from("a := 5 * 3 + (2 - 1) / 2;");
         let expected_tokens = vec![
-            Name("a".to_string()), Declaration, Number(5), Star, Number(3), Plus,
-            OpenParen, Number(2), Minus, Number(1), CloseParen, Slash, Number(2), End
+            Name("a".to_string()),
+            Declaration,
+            Number(5),
+            Star,
+            Number(3),
+            Plus,
+            OpenParen,
+            Number(2),
+            Minus,
+            Number(1),
+            CloseParen,
+            Slash,
+            Number(2),
+            End,
         ];
         test(input, expected_tokens);
     }
@@ -253,8 +299,16 @@ mod tests {
     fn test_variable_assignment() {
         let input = String::from("var1if := 100; var2 := var1if + 50;");
         let expected_tokens = vec![
-            Name("var1if".to_string()), Declaration, Number(100), End,
-            Name("var2".to_string()), Declaration, Name("var1if".to_string()), Plus, Number(50), End
+            Name("var1if".to_string()),
+            Declaration,
+            Number(100),
+            End,
+            Name("var2".to_string()),
+            Declaration,
+            Name("var1if".to_string()),
+            Plus,
+            Number(50),
+            End,
         ];
         test(input, expected_tokens);
     }
@@ -269,10 +323,22 @@ mod tests {
             }",
         );
         let expected_tokens = vec![
-            Keywords(Keyword::If), Name("a".to_string()), CloseArrow, Number(0), OpenCurly,
-            Name("b".to_string()), Declaration, Number(1), End,
-            CloseCurly, Keywords(Keyword::Else), OpenCurly,
-            Name("b".to_string()), Declaration, Number(2), End,
+            Keywords(Keyword::If),
+            Name("a".to_string()),
+            CloseArrow,
+            Number(0),
+            OpenCurly,
+            Name("b".to_string()),
+            Declaration,
+            Number(1),
+            End,
+            CloseCurly,
+            Keywords(Keyword::Else),
+            OpenCurly,
+            Name("b".to_string()),
+            Declaration,
+            Number(2),
+            End,
             CloseCurly,
         ];
         test(input, expected_tokens);
@@ -286,8 +352,17 @@ mod tests {
             }",
         );
         let expected_tokens = vec![
-            Keywords(Keyword::For), Name("forx".to_string()), OpenArrow, Number(10), OpenCurly,
-            Name("forx".to_string()), Declaration, Name("forx".to_string()), Plus, Number(1), End,
+            Keywords(Keyword::For),
+            Name("forx".to_string()),
+            OpenArrow,
+            Number(10),
+            OpenCurly,
+            Name("forx".to_string()),
+            Declaration,
+            Name("forx".to_string()),
+            Plus,
+            Number(1),
+            End,
             CloseCurly,
         ];
         test(input, expected_tokens);
@@ -295,11 +370,24 @@ mod tests {
 
     #[test]
     fn test_invalid_syntax() {
-        let input = String::from("a := 5 + +;\
-        b := &**a;");
+        let input = String::from(
+            "a := 5 + +;\
+        b := &**a;",
+        );
         let expected_tokens = vec![
-            Name("a".to_string()), Declaration, Number(5), Plus, Plus, End,
-            Name("b".to_string()), Declaration, Ampersand, Star, Star, Name("a".to_string()), End,
+            Name("a".to_string()),
+            Declaration,
+            Number(5),
+            Plus,
+            Plus,
+            End,
+            Name("b".to_string()),
+            Declaration,
+            Ampersand,
+            Star,
+            Star,
+            Name("a".to_string()),
+            End,
         ];
         test(input, expected_tokens); // Or throw an error depending on lexer implementation
     }
@@ -311,8 +399,16 @@ mod tests {
              fncfor := iret + 2223;",
         );
         let expected_tokens = vec![
-            Name("ifa".to_string()), Declaration, Number(5), End,
-            Name("fncfor".to_string()), Declaration, Name("iret".to_string()), Plus, Number(2223), End
+            Name("ifa".to_string()),
+            Declaration,
+            Number(5),
+            End,
+            Name("fncfor".to_string()),
+            Declaration,
+            Name("iret".to_string()),
+            Plus,
+            Number(2223),
+            End,
         ];
         test(input, expected_tokens);
     }
@@ -321,9 +417,22 @@ mod tests {
     fn test_multiple_statements() {
         let input = String::from("a := 5; b := a + 3; c := b * 2;");
         let expected_tokens = vec![
-            Name("a".to_string()), Declaration, Number(5), End,
-            Name("b".to_string()), Declaration, Name("a".to_string()), Plus, Number(3), End,
-            Name("c".to_string()), Declaration, Name("b".to_string()), Star, Number(2), End
+            Name("a".to_string()),
+            Declaration,
+            Number(5),
+            End,
+            Name("b".to_string()),
+            Declaration,
+            Name("a".to_string()),
+            Plus,
+            Number(3),
+            End,
+            Name("c".to_string()),
+            Declaration,
+            Name("b".to_string()),
+            Star,
+            Number(2),
+            End,
         ];
         test(input, expected_tokens);
     }
