@@ -40,8 +40,12 @@ pub enum Token {
     CloseCurly,
     OpenArrow,
     CloseArrow,
+    LeftArrow,
+    RightArrow,
     Keywords(Keyword),
 
+    Inc,
+    Dec,
     Dot,
     Comma,
 
@@ -90,8 +94,12 @@ fn init() -> HashMap<String, Token> {
         (String::from("<"), Token::OpenArrow),
         (String::from(">"), Token::CloseArrow),
         (String::from("."), Token::Dot),
+        (String::from("<<"), Token::LeftArrow),
+        (String::from(">>"), Token::RightArrow),
         (String::from(","), Token::Comma),
         (String::from(";"), Token::End),
+        (String::from("++"), Token::Inc),
+        (String::from("--"), Token::Dec),
     ]);
 
     map
@@ -151,7 +159,7 @@ pub fn lex(string: String) -> Vec<Token> {
     let morfems = split(&string);
     let separators = vec![
         "(", ")", "{", "}", "[", "]",
-        ":=", "-", "+", "*", "/", "%", "==", "=", "!=", "<", ">", "&&", "||", "!", "~", "&", "|", "^", ";",
+        ":=", "++", "--", "-", "+", "*", "/", "%", "==", "=", "!=", "<<", ">>", "<", ">", "&&", "||", "!", "~", "&", "|", "^", ";",
     ];
 
     for morfem in morfems {
