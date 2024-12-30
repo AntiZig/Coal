@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Clone)]
 enum Component {
     Tok(Token),
     Function,
@@ -10,6 +10,20 @@ enum Component {
     Statement,
     Body,
     Num,
+}
+
+impl PartialEq for Component {
+    fn eq(&self, other: &Self) -> bool {
+        match (self,other) {
+            (Tok(token1), Tok(token2)) => {
+                match (token1, token2) {
+                    (Name(_), Name(_)) => true,
+                    (_, _) => token1 == token2,
+                }
+            },
+            (comp1, comp2) => comp1 == comp2,
+        }
+    }
 }
 
 struct Rule {
@@ -96,11 +110,16 @@ use crate::lexer::Token::{CloseCurly, CloseParen, End, Keywords, Minus, Name, Op
 use crate::parser::Component::{Body, Declare, Expression, Function, Num, Statement, Tok};
 
 fn equal(stack: &Vec<Component>, pattern: &Vec<Component>) -> bool {
-    let j = 0;
+    let mut j = 0;
     for i in (stack.len() - pattern.len())..stack.len() {
-        if stack[i] != stack[j] {
+        match pattern[j] {
+            Tok(token) => {}
+            _ => {}
+        }
+        if stack[i] != pattern[j] {
             return false;
         }
+        j += 1;
     }
     true
 }
@@ -123,7 +142,10 @@ fn priotok(tok: &Token) -> u8 {
 }
 
 fn priorule(rule: &Rule) -> u8 {
-    priotok(&rule.token.clone().unwrap())
+    match rule.token.clone() {
+        None => {0}
+        Some(tok) => {priotok(&tok)}
+    }
 }
 
 fn reduce(stack: &mut Vec<Component>, nexttoken: &Option<Token>) {
