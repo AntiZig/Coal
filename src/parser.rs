@@ -1,7 +1,6 @@
 #[derive(Debug, PartialEq, Clone)]
 enum Component {
     Tok(Token),
-    Name,
     Function,
     Expression,
     Exprs,
@@ -24,7 +23,7 @@ static RULES: LazyLock<Vec<Rule>> = LazyLock::new(|| {
         Rule {
             input: Vec::from([
                 Tok(Keywords(Fnc)),
-                Name,
+                Tok(Name(None)),
                 Tok(OpenParen),
                 Tok(CloseParen),
                 Tok(OpenCurly),
@@ -72,7 +71,7 @@ static RULES: LazyLock<Vec<Rule>> = LazyLock::new(|| {
             token: None,
         },
         Rule {
-            input: Vec::from([Tok(Name)]), //TODO fix this please
+            input: Vec::from([Tok(Name(None))]),
             output: Expression,
             token: None,
         },
@@ -93,10 +92,8 @@ static RULES: LazyLock<Vec<Rule>> = LazyLock::new(|| {
 use std::sync::LazyLock;
 use crate::lexer::Keyword::Fnc;
 use crate::lexer::Token;
-use crate::lexer::Token::{
-    CloseCurly, CloseParen, End, Keywords, Minus, OpenCurly, OpenParen, Plus, Star,
-};
-use crate::parser::Component::{Body, Declare, Expression, Function, Name, Num, Statement, Tok};
+use crate::lexer::Token::{CloseCurly, CloseParen, End, Keywords, Minus, Name, OpenCurly, OpenParen, Plus, Star};
+use crate::parser::Component::{Body, Declare, Expression, Function, Num, Statement, Tok};
 
 fn equal(stack: &Vec<Component>, pattern: &Vec<Component>) -> bool {
     let j = 0;
@@ -180,7 +177,7 @@ mod tests {
     #[test]
     fn simple_test() {
         let input = String::from("a + b *");
-        let expected = vec![Name, Tok(Plus), Name, Tok(Star)];
+        let expected = vec![Tok(Name(Some("a".to_string()))), Tok(Plus), Tok(Name(Some("b".to_string()))), Tok(Star)];
         test(input, expected);
     }
 }
