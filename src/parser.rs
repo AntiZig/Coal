@@ -14,14 +14,14 @@ enum Component {
 
 impl PartialEq for Component {
     fn eq(&self, other: &Self) -> bool {
-        match (self,other) {
+        match (self, other) {
             (Tok(token1), Tok(token2)) => {
                 match (token1, token2) {
                     (Name(_), Name(_)) => true,
                     (_, _) => token1 == token2,
                 }
             },
-            (comp1, comp2) => comp1 == comp2,
+            (_, _) => discriminant(self) == discriminant(other),
         }
     }
 }
@@ -103,6 +103,7 @@ static RULES: LazyLock<Vec<Rule>> = LazyLock::new(|| {
     ])
 });
 
+use std::mem::discriminant;
 use std::sync::LazyLock;
 use crate::lexer::Keyword::Fnc;
 use crate::lexer::Token;
@@ -112,10 +113,6 @@ use crate::parser::Component::{Body, Declare, Expression, Function, Num, Stateme
 fn equal(stack: &Vec<Component>, pattern: &Vec<Component>) -> bool {
     let mut j = 0;
     for i in (stack.len() - pattern.len())..stack.len() {
-        match pattern[j] {
-            Tok(token) => {}
-            _ => {}
-        }
         if stack[i] != pattern[j] {
             return false;
         }
@@ -199,7 +196,7 @@ mod tests {
     #[test]
     fn simple_test() {
         let input = String::from("a + b *");
-        let expected = vec![Tok(Name(Some("a".to_string()))), Tok(Plus), Tok(Name(Some("b".to_string()))), Tok(Star)];
+        let expected = vec![Expression, Tok(Plus), Expression, Tok(Star)];
         test(input, expected);
     }
 }
