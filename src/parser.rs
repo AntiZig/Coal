@@ -15,11 +15,9 @@ enum Component {
 impl PartialEq for Component {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Tok(token1), Tok(token2)) => {
-                match (token1, token2) {
-                    (Name(_), Name(_)) => true,
-                    (_, _) => token1 == token2,
-                }
+            (Tok(token1), Tok(token2)) => match (token1, token2) {
+                (Name(_), Name(_)) => true,
+                (_, _) => token1 == token2,
             },
             (_, _) => discriminant(self) == discriminant(other),
         }
@@ -103,12 +101,14 @@ static RULES: LazyLock<Vec<Rule>> = LazyLock::new(|| {
     ])
 });
 
-use std::mem::discriminant;
-use std::sync::LazyLock;
 use crate::lexer::Keyword::Fnc;
 use crate::lexer::Token;
-use crate::lexer::Token::{CloseCurly, CloseParen, End, Keywords, Minus, Name, OpenCurly, OpenParen, Plus, Star};
+use crate::lexer::Token::{
+    CloseCurly, CloseParen, End, Keywords, Minus, Name, OpenCurly, OpenParen, Plus, Star,
+};
 use crate::parser::Component::{Body, Declare, Expression, Function, Num, Statement, Tok};
+use std::mem::discriminant;
+use std::sync::LazyLock;
 
 fn equal(stack: &Vec<Component>, pattern: &Vec<Component>) -> bool {
     let mut j = 0;
@@ -140,8 +140,8 @@ fn priotok(tok: &Token) -> u8 {
 
 fn priorule(rule: &Rule) -> u8 {
     match rule.token.clone() {
-        None => {0}
-        Some(tok) => {priotok(&tok)}
+        None => 0,
+        Some(tok) => priotok(&tok),
     }
 }
 
@@ -199,5 +199,18 @@ mod tests {
         let expected = vec![Expression, Tok(Plus), Expression, Tok(Star)];
         test(input, expected);
     }
-}
 
+    #[test]
+    fn simple_test2() {
+        let input = String::from("a + b -");
+        let expected = vec![Expression, Tok(Minus)];
+        test(input, expected);
+    }
+
+    #[test]
+    fn simple_test3() {
+        let input = String::from("a + b * c");
+        let expected = vec![Expression];
+        test(input, expected);
+    }
+}

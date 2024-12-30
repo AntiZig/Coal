@@ -145,7 +145,12 @@ fn split(string: &String) -> Vec<String> {
         }
     }
 
-    strs.extend(split(&string[p2..].to_string()));
+    if p2 == 0 {
+        strs.push(string[p1..].to_string());
+    } else {
+        strs.extend(split(&string[p2..].to_string()));
+    }
+
     strs
 }
 
@@ -332,6 +337,15 @@ mod tests {
             Name(Some("a".to_string())), Declaration, Number(5), End,
             Name(Some("b".to_string())), Declaration, Name(Some("a".to_string())), Plus, Number(3), End,
             Name(Some("c".to_string())), Declaration, Name(Some("b".to_string())), Star, Number(2), End
+        ];
+        test(input, expected_tokens);
+    }
+
+    #[test]
+    fn simple_test3() {
+        let input = String::from("a + b * c");
+        let expected_tokens = vec![
+            Name(Some("a".to_string())), Plus, Name(Some("b".to_string())), Star, Name(Some("c".to_string()))
         ];
         test(input, expected_tokens);
     }
