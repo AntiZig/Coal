@@ -255,10 +255,15 @@ fn getFuncs(tokens: Vec<Token>) -> HashMap<Func, Vec<String>> {
     for tokensoffunc in splited {
         let name = tokensoffunc[0].clone();
         let output = Vec::new();
-        for i in 1..tokensoffunc.len() {
-            if tokensoffunc[i] == OpenCurly {
-                break;
-            }
+        assert_eq!(tokensoffunc[1], OpenParen);
+        //foo ( arg1 , arg2 , arg3 : type1 , arg4 : type2 , arg5 , arg6 : type3 ) ...
+        let tokensofargs = tokensoffunc[2..].split(|token| *token == DoubleDot);
+        //[arg1 , arg2 , arg3] [type1 , arg4] [type2 , arg5 , arg6] [type3]
+        for i in 0..(tokensofargs.len() - 1) {
+            for j in match i {
+                0 => 0,
+                _ => 1,
+            }..tokensofargs[i].len()
         }
     }
 
