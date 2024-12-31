@@ -1,15 +1,30 @@
+enum Expr {
+    Num(i64),
+    Names(Vec<String>),
+    Func(String, String, Vec<(String, String)>, Vec<Stmt>),
+    InfixFunc(String, Expr, Expr),
+    FuncCall(String, Vec<Expr>),
+}
+
+enum Stmt {
+    Assign(String, Expr),
+    Decl(String, Expr),
+    For(Expr, Vec<Stmt>),
+    If(Expr, Vec<Stmt>),
+}
+
 #[derive(Debug, Clone)]
 enum Component {
     Tok(Token),
     Function,
     Expression,
     Exprs,
-    Args,
-    Argument,
     Declare,
+    Assignment,
     Statement,
-    Body,
     Num,
+    FunctionCall,
+    Names,
 }
 
 impl PartialEq for Component {
@@ -32,6 +47,18 @@ struct Rule {
 
 static RULES: LazyLock<Vec<Rule>> = LazyLock::new(|| {
     Vec::from([
+        //Names
+        Rule {
+            input: Vec::from([Tok(Name(None))]),
+            output: Names,
+            token: None,
+        },
+        Rule {
+            input: Vec::from([Names, Tok(Comma), Tok(Name(None))]),
+            output: Names,
+            token: Some(Comma),
+        },
+        //Function
         Rule {
             input: Vec::from([
                 Tok(Keywords(Fnc)),
@@ -39,26 +66,10 @@ static RULES: LazyLock<Vec<Rule>> = LazyLock::new(|| {
                 Tok(OpenParen),
                 Tok(CloseParen),
                 Tok(OpenCurly),
-                Body,
+                Statement,
                 Tok(CloseCurly),
             ]),
             output: Function,
-            token: None,
-        },
-        // Bodys definition
-        Rule {
-            input: Vec::from([Statement, Tok(End)]),
-            output: Body,
-            token: None,
-        },
-        Rule {
-            input: Vec::from([Expression, Tok(End)]),
-            output: Body,
-            token: None,
-        },
-        Rule {
-            input: Vec::from([Body, Body]),
-            output: Body,
             token: None,
         },
         //Expressions Definition
@@ -92,6 +103,34 @@ static RULES: LazyLock<Vec<Rule>> = LazyLock::new(|| {
             output: Expression,
             token: None,
         },
+        //Exprs
+        Rule {
+            input: Vec::from([Expression]),
+            output: Exprs,
+            token: None,
+        },
+        Rule {
+            input: Vec::from([Exprs, Tok(Comma), Expression]),
+            output: Exprs,
+            token: Some(Comma),
+        },
+        //FunctionCall
+        Rule {
+            input: Vec::from([Tok(Name(None)), Tok(OpenParen), Tok(CloseParen)]),
+            output: FunctionCall,
+            token: None,
+        },
+        Rule {
+            input: Vec::from([Tok(Name(None)), Tok(OpenParen), Exprs, Tok(CloseParen)]),
+            output: FunctionCall,
+            token: None,
+        },
+        //Declare/Assignment
+        Rule {
+            input: Vec::from([Tok(Name(None)), Tok(Declaration), Expression]),
+            output: Declare,
+            token: Some(Declaration),
+        },
         //Statement definitions
         Rule {
             input: Vec::from([Declare]),
@@ -103,10 +142,8 @@ static RULES: LazyLock<Vec<Rule>> = LazyLock::new(|| {
 
 use crate::lexer::Keyword::Fnc;
 use crate::lexer::Token;
-use crate::lexer::Token::{
-    CloseCurly, CloseParen, End, Keywords, Minus, Name, OpenCurly, OpenParen, Plus, Star,
-};
-use crate::parser::Component::{Body, Declare, Expression, Function, Num, Statement, Tok};
+use crate::lexer::Token::{CloseCurly, CloseParen, Comma, Declaration, End, Keywords, Minus, Name, OpenCurly, OpenParen, Plus, Star};
+use crate::parser::Component::{Declare, Expression, Num, Statement, Tok, Function, FunctionCall, Exprs, Names};
 use std::mem::discriminant;
 use std::sync::LazyLock;
 
