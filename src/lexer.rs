@@ -49,6 +49,7 @@ pub enum Token {
     Dot,
     Comma,
     FuncArrow,
+    DoubleDot,
 
     End,
 }
@@ -102,6 +103,7 @@ fn init() -> HashMap<String, Token> {
         (String::from("++"), Token::Inc),
         (String::from("--"), Token::Dec),
         (String::from("->"), Token::FuncArrow),
+        (String::from(":"), Token::DoubleDot)
     ]);
 
     map
@@ -166,7 +168,10 @@ pub fn lex(string: String) -> Vec<Token> {
     let morfems = split(&string);
     let separators = vec![
         "(", ")", "{", "}", "[", "]",
-        ":=", "++", "->", "--", "-", "+", "*", "/", "%", "==", "=", "!=", "<<", ">>", "<", ">", "&&", "||", "!", "~", "&", "|", "^", ";",
+        ":=", ":", "++", "->", "--", "-",
+        "+", "*", "/", "%", "==", "=", "!=",
+        "<<", ">>", "<", ">", "&&", "||",
+        "!", "~", "&", "|", "^", ";",
     ];
 
     for morfem in morfems {

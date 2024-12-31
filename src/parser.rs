@@ -22,14 +22,17 @@ enum Stmt {
 enum Component {
     Tok(Token),
     Function,
+    FunctionDeclaration,
     Expression,
     Exprs,
+    Args,
     Declare,
     Assignment,
     Statement,
     Num,
     FunctionCall,
     Names,
+    Body,
 }
 
 impl PartialEq for Token {
@@ -56,6 +59,29 @@ struct Rule {
     token: Option<Token>,
 }
 
+static RULEFUNC: LazyLock<Rule> = LazyLock::new(|| Rule {
+    input: Vec::from([
+        Tok(Keywords(Fnc)),
+        Tok(Name(None)),
+        Tok(OpenParen),
+        Names,
+        Tok(CloseParen),
+    ]),
+    output: FunctionDeclaration,
+    token: None,
+});
+
+static RULENONARGSFUNC: LazyLock<Rule> = LazyLock::new(|| Rule {
+    input: Vec::from([
+        Tok(Keywords(Fnc)),
+        Tok(Name(None)),
+        Tok(OpenParen),
+        Tok(CloseParen),
+    ]),
+    output: FunctionDeclaration,
+    token: None,
+});
+
 static RULES: LazyLock<Vec<Rule>> = LazyLock::new(|| {
     Vec::from([
         //Names
@@ -69,21 +95,30 @@ static RULES: LazyLock<Vec<Rule>> = LazyLock::new(|| {
             output: Names,
             token: Some(Comma),
         },
+        //Args
+        Rule {
+            input: Vec::from([Names, Tok(DoubleDot), Names]),
+            output: Args,
+            token: None,
+        },
+        //Bodys
+        Rule {
+            input: Vec::from([Tok(OpenCurly), Statement, Tok(CloseParen)]),
+            output: Body,
+            token: None,
+        },
         //Function
         Rule {
-            input: Vec::from([
-                Tok(Keywords(Fnc)),
-                Tok(Name(None)),
-                Tok(OpenParen),
-                Tok(CloseParen),
-                Tok(OpenCurly),
-                Statement,
-                Tok(CloseCurly),
-            ]),
+            input: Vec::from([FunctionDeclaration, Body]),
             output: Function,
-            token: Some(OpenParen),
+            token: None,
         },
-        //Expressions Definition
+        Rule {
+            input: Vec::from([FunctionDeclaration, Tok(Token::FuncArrow), Names, Statement]),
+            output: Function,
+            token: None,
+        },
+       //Expressions Definition
         Rule {
             input: Vec::from([Tok(OpenParen), Expression, Tok(CloseParen)]),
             output: Expression,
@@ -153,8 +188,8 @@ static RULES: LazyLock<Vec<Rule>> = LazyLock::new(|| {
 
 use crate::lexer::Keyword::Fnc;
 use crate::lexer::Token;
-use crate::lexer::Token::{CloseCurly, CloseParen, Comma, Declaration, End, Keywords, Minus, Name, OpenCurly, OpenParen, Plus, Star};
-use crate::parser::Component::{Declare, Expression, Num, Statement, Tok, Function, FunctionCall, Exprs, Names};
+use crate::lexer::Token::{CloseCurly, CloseParen, Comma, Declaration, DoubleDot, End, Keywords, Minus, Name, OpenCurly, OpenParen, Plus, Star};
+use crate::parser::Component::{Declare, Expression, Exprs, Function, FunctionCall, FunctionDeclaration, Names, Num, Statement, Tok, Body, Args};
 use std::mem::discriminant;
 use std::sync::LazyLock;
 
@@ -217,12 +252,14 @@ fn getFuncs(tokens: Vec<Token>) -> HashMap<Func, Vec<String>> {
     let mut map = HashMap::new();
     let splited = tokens.split(|token| *token == *Fnc);
 
-    for tokeensoffunc in splited {
-        let tokens = Vec::from(Fnc);
-        for token in tokeensoffunc {
-            if toke
+    for tokensoffunc in splited {
+        let name = tokensoffunc[0].clone();
+        let output = Vec::new();
+        for i in 1..tokensoffunc.len() {
+            if tokensoffunc[i] == OpenCurly {
+                break;
+            }
         }
-
     }
 
     map
