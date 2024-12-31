@@ -1,7 +1,12 @@
+struct Func {
+    Name: String,
+    Args: Vec<(String, String)>,
+}
+
 enum Expr {
     Num(i64),
     Names(Vec<String>),
-    Func(String, String, Vec<(String, String)>, Vec<Stmt>),
+    Func(Func, Vec<String>, Vec<Stmt>),
     InfixFunc(String, Expr, Expr),
     FuncCall(String, Vec<Expr>),
 }
@@ -27,13 +32,19 @@ enum Component {
     Names,
 }
 
+impl PartialEq for Token {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Name(_), Name(_)) => true,
+            (_, _) => self == other,
+        }
+    }
+}
+
 impl PartialEq for Component {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Tok(token1), Tok(token2)) => match (token1, token2) {
-                (Name(_), Name(_)) => true,
-                (_, _) => token1 == token2,
-            },
+            (Tok(token1), Tok(token2)) => token1 == token2,
             (_, _) => discriminant(self) == discriminant(other),
         }
     }
@@ -70,7 +81,7 @@ static RULES: LazyLock<Vec<Rule>> = LazyLock::new(|| {
                 Tok(CloseCurly),
             ]),
             output: Function,
-            token: None,
+            token: Some(OpenParen),
         },
         //Expressions Definition
         Rule {
@@ -201,7 +212,23 @@ fn reduce(stack: &mut Vec<Component>, nexttoken: &Option<Token>) {
     }
 }
 
+use std::collections::HashMap;
+fn getFuncs(tokens: Vec<Token>) -> HashMap<Func, Vec<String>> {
+    let mut map = HashMap::new();
+    let splited = tokens.split(|token| *token == *Fnc);
+
+    for tokeensoffunc in splited {
+        let tokens = Vec::from(Fnc);
+        for token in tokeensoffunc {
+            if toke
+        }
+
+    }
+
+    map
+}
 pub fn parse(tokens: Vec<Token>) -> Vec<Component> {
+    let func2output = getFuncs(tokens.clone());
     let mut stack = Vec::new();
 
     for i in 0..(tokens.len() - 1) {
