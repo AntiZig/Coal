@@ -9,9 +9,11 @@
 `InfixFunc -> + | - | * | / | FuncName`
 
 `Expr -> FuncName(OptFuncArgs)
-       | Expr InfixFunc Expr 
+       | Expr InfixFunc T 
        | (Expr) 
-       | Var 
+       | T`
+
+`T ->    Var 
        | Number`
 
 `OptFuncArgs -> Exprs | Epsilon`

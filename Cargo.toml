@@ -3,4 +3,9 @@ name = "Coal"
 version = "0.1.0"
 edition = "2021"
 
-[dependencies]
+[lints.rust]
+unused = "allow"
+dead_code = "allow"
+
+[lints.clippy]
+enum_glob_use = "deny"
