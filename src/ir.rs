@@ -1,4 +1,8 @@
-use std::{collections::HashMap, fmt::Display};
+use core::fmt;
+use std::{
+    collections::HashMap,
+    fmt::{Debug, Display, Formatter, Pointer},
+};
 
 #[derive(Debug)]
 enum Expr {
@@ -36,9 +40,31 @@ struct IRBlock {
     ctx: IRctx,
 }
 
+impl ToString for IRBlock {
+    fn to_string(&self) -> String {
+        let name = &self.name;
+        let t = &self.ttype;
+
+        let header = String::from("block ") + &name + &String::from(" ") + &t + &String::from("\n");
+        let code =
+            self.ctx
+                .ops
+                .clone()
+                .into_iter()
+                .enumerate()
+                .fold("".to_string(), |acc, (i, op)| {
+                    acc + &reg_to_str(i)
+                        + &String::from(" <- ")
+                        + &op.to_string()
+                        + &String::from("\n")
+                });
+        header + &code
+    }
+}
+
 type IReg = usize;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum IROp {
     Load(IRValue),
     Mov(IReg),
@@ -48,11 +74,45 @@ enum IROp {
     Mul(IReg, IReg),
 }
 
-#[derive(Debug)]
+impl ToString for IROp {
+    fn to_string(&self) -> String {
+        match self {
+            Self::Mov(reg) => String::from("mov ") + &reg_to_str(*reg),
+            Self::Store(reg) => String::from("str ") + &reg_to_str(*reg),
+            Self::Add(r1, r2) => {
+                String::from("add ") + &reg_to_str(*r1) + &String::from(" ") + &reg_to_str(*r2)
+            }
+            Self::Sub(r1, r2) => {
+                String::from("sub ") + &reg_to_str(*r1) + &String::from(" ") + &reg_to_str(*r2)
+            }
+            Self::Mul(r1, r2) => {
+                String::from("mul ") + &reg_to_str(*r1) + &String::from(" ") + &reg_to_str(*r2)
+            }
+            Self::Load(val) => String::from("ld ") + &val.to_string(),
+            _ => unimplemented!(),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 enum IRValue {
     Reg(IReg),
     U64(u64),
     Var(String),
+}
+
+fn reg_to_str(reg: IReg) -> String {
+    "r".to_string() + &reg.to_string()
+}
+
+impl ToString for IRValue {
+    fn to_string(&self) -> String {
+        match self {
+            IRValue::Reg(register) => reg_to_str(*register),
+            IRValue::U64(n) => "num ".to_string() + &n.to_string(),
+            IRValue::Var(str) => "var ".to_string() + &str,
+        }
+    }
 }
 
 fn fn_to_ir(func: Fn) -> IRBlock {
@@ -200,5 +260,6 @@ mod tests {
         let func = get_ast();
         let ret = fn_to_ir(func);
         println!("{:?}", ret);
+        println!("{}", ret.to_string());
     }
 }
