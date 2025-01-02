@@ -9,6 +9,3 @@ dead_code = "allow"
 
 [lints.clippy]
 enum_glob_use = "deny"
-
-[dependencies]
-regex = "1.11.1"

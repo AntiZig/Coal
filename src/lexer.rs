@@ -1,5 +1,3 @@
-use regex::{Regex, RegexSet};
-
 #[derive(Debug, PartialEq, Clone)]
 pub enum Keyword {
     If,
