@@ -46,18 +46,15 @@ impl ToString for IRBlock {
         let t = &self.ttype;
 
         let header = String::from("block ") + &name + &String::from(" ") + &t + &String::from("\n");
-        let code =
-            self.ctx
-                .ops
-                .clone()
-                .into_iter()
-                .enumerate()
-                .fold("".to_string(), |acc, (i, op)| {
-                    acc + &reg_to_str(i)
-                        + &String::from(" <- ")
-                        + &op.to_string()
-                        + &String::from("\n")
-                });
+        let code = self
+            .ctx
+            .ops
+            .clone()
+            .into_iter()
+            .enumerate()
+            .fold("".to_string(), |acc, (i, op)| {
+                acc + &op.to_string_triple(i) + &String::from("\n")
+            });
         header + &code
     }
 }
@@ -72,6 +69,47 @@ enum IROp {
     Add(IReg, IReg),
     Sub(IReg, IReg),
     Mul(IReg, IReg),
+}
+
+impl IROp {
+    fn to_string_triple(&self, i: usize) -> String {
+        match self {
+            Self::Mov(reg) => {
+                String::from("mov ") + &reg_to_str(i) + &String::from(", ") + &reg_to_str(*reg)
+            }
+            Self::Store(reg) => {
+                String::from("str ") + &reg_to_str(i) + &String::from(", ") + &reg_to_str(*reg)
+            }
+            Self::Add(r1, r2) => {
+                String::from("add ")
+                    + &reg_to_str(*r1)
+                    + &String::from(", ")
+                    + &reg_to_str(i)
+                    + &String::from(", ")
+                    + &reg_to_str(*r2)
+            }
+            Self::Sub(r1, r2) => {
+                String::from("sub ")
+                    + &reg_to_str(*r1)
+                    + &String::from(", ")
+                    + &reg_to_str(i)
+                    + &String::from(", ")
+                    + &reg_to_str(*r2)
+            }
+            Self::Mul(r1, r2) => {
+                String::from("mul ")
+                    + &reg_to_str(*r1)
+                    + &String::from(", ")
+                    + &reg_to_str(i)
+                    + &String::from(", ")
+                    + &reg_to_str(*r2)
+            }
+            Self::Load(val) => {
+                String::from("ld ") + &reg_to_str(i) + &String::from(", ") + &val.to_string()
+            }
+            _ => unimplemented!(),
+        }
+    }
 }
 
 impl ToString for IROp {
@@ -109,8 +147,8 @@ impl ToString for IRValue {
     fn to_string(&self) -> String {
         match self {
             IRValue::Reg(register) => reg_to_str(*register),
-            IRValue::U64(n) => "num ".to_string() + &n.to_string(),
-            IRValue::Var(str) => "var ".to_string() + &str,
+            IRValue::U64(n) => n.to_string(),
+            IRValue::Var(str) => str.to_string(),
         }
     }
 }
