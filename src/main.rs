@@ -1,6 +1,6 @@
 use lexer::lex;
 
-mod code_gen_try;
+mod ir;
 mod lexer;
 mod parser;
 mod startup;
