@@ -82,25 +82,25 @@ impl IROp {
             }
             Self::Add(r1, r2) => {
                 String::from("add ")
-                    + &reg_to_str(*r1)
-                    + &String::from(", ")
                     + &reg_to_str(i)
+                    + &String::from(", ")
+                    + &reg_to_str(*r1)
                     + &String::from(", ")
                     + &reg_to_str(*r2)
             }
             Self::Sub(r1, r2) => {
                 String::from("sub ")
-                    + &reg_to_str(*r1)
-                    + &String::from(", ")
                     + &reg_to_str(i)
+                    + &String::from(", ")
+                    + &reg_to_str(*r1)
                     + &String::from(", ")
                     + &reg_to_str(*r2)
             }
             Self::Mul(r1, r2) => {
                 String::from("mul ")
-                    + &reg_to_str(*r1)
-                    + &String::from(", ")
                     + &reg_to_str(i)
+                    + &String::from(", ")
+                    + &reg_to_str(*r1)
                     + &String::from(", ")
                     + &reg_to_str(*r2)
             }
