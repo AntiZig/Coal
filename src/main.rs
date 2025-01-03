@@ -1,8 +1,8 @@
 use lexer::lex;
 
-mod ir;
+mod code_gen;
+pub mod ir;
 mod lexer;
-mod parser;
 mod startup;
 
 fn main() {

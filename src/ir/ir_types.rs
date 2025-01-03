@@ -5,8 +5,15 @@ fn reg_to_str(reg: IReg) -> String {
     "r".to_string() + &reg.to_string()
 }
 
+// global context of all blocks.
 #[derive(Debug)]
-pub struct IRctx {
+pub struct GlobalCtx {
+    labels: HashMap<String, IRBlock>,
+}
+
+// local context of the block.
+#[derive(Debug)]
+pub struct LocalCtx {
     pub ops: Vec<IROp>,
     pub vtoi: HashMap<String, usize>,
     pub lcounter: usize,
@@ -18,7 +25,7 @@ type Label = String;
 pub struct IRBlock {
     pub label: Label,
     pub params: Vec<Type>,
-    pub ctx: IRctx,
+    pub ctx: LocalCtx,
 }
 
 impl ToString for IRBlock {
