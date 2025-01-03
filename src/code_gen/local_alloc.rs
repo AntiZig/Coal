@@ -1,6 +1,7 @@
 use crate::ir::ir_types::{IRBlock, IROp, IRValue, IReg, LocalCtx};
 use std::collections::HashMap;
 
+// TODO: registers and all this sheisung to another module.
 fn reg_to_str_map() -> HashMap<Register, String> {
     HashMap::from([
         (Register::RAX, "rax".to_string()),
@@ -22,20 +23,22 @@ fn reg_to_str_map() -> HashMap<Register, String> {
 
 #[derive(Debug, Hash, Eq, PartialEq)]
 pub enum Register {
-    RAX = 0,
-    RBX = 1,
-    RCX = 2,
-    RDX = 3,
-    RDI = 4,
-    RSI = 5,
-    R8 = 6,
-    R9 = 7,
-    R10 = 8,
-    R11 = 9,
-    R12 = 10,
-    R13 = 11,
-    R14 = 12,
-    R15 = 13,
+    RAX,
+    RBX,
+    RCX,
+    RDX,
+    RDI,
+    RSI,
+    R8,
+    R9,
+    R10,
+    R11,
+    R12,
+    R13,
+    R14,
+    R15,
+    RSP,
+    RBP,
 }
 
 fn get_starting_scratches() -> Vec<Register> {
@@ -73,12 +76,16 @@ fn free_scratch(reg: Register, scratches: &mut Vec<Register>) {
 }
 
 #[derive(Debug)]
-enum Memory {
+pub enum Memory {
     Register(Register),
     Stack(usize),
 }
 
-pub fn top_down_init(block: IRBlock) {
+fn allocate_stack(size: usize) {
+    unimplemented!()
+}
+
+pub fn top_down_init(block: IRBlock) -> (HashMap<IReg, Memory>, Vec<Register>, usize) {
     let ops = block.ctx.ops;
     let mut prios: Vec<(usize, usize)> = (0..ops.len()).map(|i| (0, i)).collect();
     for op in ops.iter() {
@@ -124,7 +131,6 @@ pub fn top_down_init(block: IRBlock) {
         .enumerate()
         .map(|(i, (_, vr))| map.insert(*vr, Memory::Stack(i)))
         .collect();
-    println!("{:?}", map);
 
-    unimplemented!()
+    (map, scratches, stack_size)
 }
