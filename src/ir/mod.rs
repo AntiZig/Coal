@@ -126,8 +126,7 @@ fn add_to_ir(e1: Box<Expr>, e2: Box<Expr>, ctx: &mut LocalCtx) -> IReg {
 }
 
 fn num_to_ir(num: u64, ctx: &mut LocalCtx) -> IReg {
-    let val = IRValue::U64(num);
-    let op = IROp::Load(val);
+    let op = IROp::Load(num);
     ctx.ops.push(op);
     ctx.ops.len() - 1
 }
@@ -159,7 +158,7 @@ mod tests {
 
     use super::*;
     fn get_ast() -> Fn {
-        let expr1 = Expr::Sub(
+        let expr1 = Expr::Addition(
             Box::new(Expr::Addition(
                 Box::new(Expr::Num(32)),
                 Box::new(Expr::Num(49)),
@@ -167,7 +166,7 @@ mod tests {
             Box::new(Expr::Num(32)),
         );
         let stmt1 = Stmt::Declare("a".to_string(), expr1);
-        let expr2 = Expr::Sub(
+        let expr2 = Expr::Addition(
             Box::new(Expr::Addition(
                 Box::new(Expr::Num(32)),
                 Box::new(Expr::Name(String::from("a"))),
@@ -189,7 +188,7 @@ mod tests {
     }
 
     fn get_ast_code_gen() -> Fn {
-        let expr1 = Expr::Sub(
+        let expr1 = Expr::Addition(
             Box::new(Expr::Addition(
                 Box::new(Expr::Num(32)),
                 Box::new(Expr::Num(49)),
@@ -197,7 +196,7 @@ mod tests {
             Box::new(Expr::Num(32)),
         );
         let stmt1 = Stmt::Declare("a".to_string(), expr1);
-        let expr2 = Expr::Sub(
+        let expr2 = Expr::Addition(
             Box::new(Expr::Addition(
                 Box::new(Expr::Num(32)),
                 Box::new(Expr::Name(String::from("a"))),
@@ -227,7 +226,13 @@ mod tests {
         let ret = fn_to_ir(func);
         println!("{:?}", ret);
         println!("{}", ret.to_string());
-        use crate::code_gen;
-        local_alloc::top_down_init(ret);
+        use crate::code_gen::{instructions, local_alloc, Ctx};
+        let mut ctx = local_alloc::top_down_init(ret.clone());
+
+        let instrs = instructions::block_to_asm(ret, &mut ctx);
+        instrs
+            .iter()
+            .map(|instr| println!("{:?}", instr))
+            .collect::<Vec<_>>();
     }
 }

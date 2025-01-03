@@ -12,7 +12,7 @@ pub struct GlobalCtx {
 }
 
 // local context of the block.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LocalCtx {
     pub ops: Vec<IROp>,
     pub vtoi: HashMap<String, usize>,
@@ -21,7 +21,7 @@ pub struct LocalCtx {
 
 type Label = String;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct IRBlock {
     pub label: Label,
     pub params: Vec<Type>,
@@ -51,7 +51,7 @@ pub type IReg = usize;
 
 #[derive(Debug, Clone)]
 pub enum IROp {
-    Load(IRValue),
+    Load(u64),
     Mov(IReg, MetaData),
     Store(IReg, MetaData),
     Add(IReg, IReg),

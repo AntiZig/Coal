@@ -1,3 +1,4 @@
+use crate::code_gen::Ctx;
 use crate::ir::ir_types::{IRBlock, IROp, IRValue, IReg, LocalCtx};
 use std::collections::HashMap;
 
@@ -21,7 +22,7 @@ fn reg_to_str_map() -> HashMap<Register, String> {
     ])
 }
 
-#[derive(Debug, Hash, Eq, PartialEq)]
+#[derive(Debug, Hash, Eq, PartialEq, Clone)]
 pub enum Register {
     RAX,
     RBX,
@@ -75,7 +76,7 @@ fn free_scratch(reg: Register, scratches: &mut Vec<Register>) {
     scratches.push(reg);
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Memory {
     Register(Register),
     Stack(usize),
@@ -85,7 +86,7 @@ fn allocate_stack(size: usize) {
     unimplemented!()
 }
 
-pub fn top_down_init(block: IRBlock) -> (HashMap<IReg, Memory>, Vec<Register>, usize) {
+pub fn top_down_init(block: IRBlock) -> Ctx {
     let ops = block.ctx.ops;
     let mut prios: Vec<(usize, usize)> = (0..ops.len()).map(|i| (0, i)).collect();
     for op in ops.iter() {
@@ -132,5 +133,9 @@ pub fn top_down_init(block: IRBlock) -> (HashMap<IReg, Memory>, Vec<Register>, u
         .map(|(i, (_, vr))| map.insert(*vr, Memory::Stack(i)))
         .collect();
 
-    (map, scratches, stack_size)
+    Ctx {
+        rtol: map,
+        scratches,
+        stack_size,
+    }
 }
