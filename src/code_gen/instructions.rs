@@ -8,7 +8,7 @@ use super::local_alloc::Memory;
 pub enum Instr {
     Push(Register),
     Add(Register, Register),
-    AddImm(Register, u64),
+    AddImm(Register, i64),
     Pop(Register),
     Mov(Memory, Memory),
     MovImm(Memory, u64),
@@ -30,7 +30,7 @@ pub fn block_to_asm(block: IRBlock, ctx: &mut Ctx) -> Vec<Instr> {
     if ctx.stack_size > 0 {
         instrs.push(Instr::AddImm(
             Register::RSP,
-            (ctx.stack_size * 8).try_into().unwrap(),
+            ((ctx.stack_size * 8) as i64) * -1,
         ));
     }
     block

@@ -82,10 +82,6 @@ pub enum Memory {
     Stack(usize),
 }
 
-fn allocate_stack(size: usize) {
-    unimplemented!()
-}
-
 pub fn top_down_init(block: IRBlock) -> Ctx {
     let ops = block.ctx.ops;
     let mut prios: Vec<(usize, usize)> = (0..ops.len()).map(|i| (0, i)).collect();
